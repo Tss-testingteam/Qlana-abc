@@ -9,8 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -18,10 +16,10 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.interactions.Actions;
+import Xlutils.Xluitls;
 
-public class Contact {
-
+public class Contact extends Xluitls {
+	
 	public static void main(String[] args)
 			throws InterruptedException, EncryptedDocumentException, InvalidFormatException, IOException {
 
@@ -44,11 +42,15 @@ public class Contact {
 		List<WebElement> moduleslist = 	driver.findElements(By.id("menu-list"));
 		moduleslist.get(0).click();
 	
+		String xlfile = "C:\\Users\\pc\\Desktop\\Contact.xlsx";
+		String xlsheet = "Sheet1";
 
+		int rc = Xluitls.getRowCount(xlfile, xlsheet);
 		
 		File file = new File("C:\\\\Users\\\\pc\\\\Desktop\\\\Contact.xlsx");   //creating a new file instance  
 		FileInputStream fis = new FileInputStream(file);   //obtaining bytes from the file  
 		//creating Workbook instance that refers to .xlsx file  
+		@SuppressWarnings("resource")
 		XSSFWorkbook wb = new XSSFWorkbook(fis);   
 		XSSFSheet sheet = wb.getSheetAt(0);     //creating a Sheet object to retrieve object  
 		XSSFRow row = sheet.getRow(0);
@@ -58,40 +60,25 @@ public class Contact {
 		int rowNum = sheet.getLastRowNum() + 1;
 		System.out.println("Total Number of Rows in the excel is : " + rowNum);
 
-		
-		Row r;
-		Cell c1, c2, c3, c4, c5, c6, c7;
+
 		WebElement firstname = driver.findElementById("first_name");
 		WebElement lastname = driver.findElementById("last_name");
 		WebElement email = driver.findElementById("contact_info.email");
 		WebElement phone = driver.findElementById("contact_info.phone_main");
+     	WebElement savebtn = driver.findElementById("button_Save");
 
 
-		for (int i = 0; i <= rowNum; i++) {
 
-			r = sheet.getRow(i);
-			c1 = r.getCell(0);
-			c2 = r.getCell(1);
-			c3 = r.getCell(2);
-			c4 = r.getCell(3);
-			c5 = r.getCell(4);
-			c6 = r.getCell(5);
-			c7 = r.getCell(6);
+		for (int i = 0; i <= rc; i++) {
 
-			// DataFormatter formatter = new DataFormatter();
-			// String str = formatter.formatCellValue(c4);
-			// double dnum = Double.parseDouble(str);
-			// System.out.println("In formated Cell Value--" + dnum);
-			
-			String prefixinp = c1.getStringCellValue();
-			String firstnameinp = c2.getStringCellValue();
-			String lastnameinp = c3.getStringCellValue();
-			String emailinp = c4.getStringCellValue();
-			String ccodeinp = c5.getStringCellValue();
-			String phoneinp = c6.getStringCellValue();
-			String contacttypeinp = c7.getStringCellValue();
+			String prefixinp = Xluitls.getCellData(xlfile, xlsheet, i, 0);
+			String firstnameinp = Xluitls.getCellData(xlfile, xlsheet, i, 1);
+			String lastnameinp = Xluitls.getCellData(xlfile, xlsheet, i, 2);
+			String emailinp = Xluitls.getCellData(xlfile, xlsheet, i, 3);
+			String ccodeinp = Xluitls.getCellData(xlfile, xlsheet, i, 4);
+			String phoneinp = Xluitls.getCellData(xlfile, xlsheet, i, 5);
+			String contacttypeinp = Xluitls.getCellData(xlfile, xlsheet, i, 6);
 
-			
 		
 			driver.findElement(By.xpath("//*[@id=\"formly_9_select_salutation_0\"]/div/label")).click();
 			Thread.sleep(1000);
@@ -109,15 +96,15 @@ public class Contact {
 			Thread.sleep(1000);
 
 			
-			
+			firstname.clear();
 			firstname.sendKeys(firstnameinp);
 			Thread.sleep(1000);
 
-
+			lastname.clear();
 			lastname.sendKeys(lastnameinp);
 			Thread.sleep(1000);
 
-
+			email.clear();
 			email.sendKeys(emailinp);
 			Thread.sleep(1000);
 			
@@ -151,15 +138,45 @@ public class Contact {
 			driver.findElementByXPath("//input[@class='ui-dropdown-filter ui-inputtext ui-widget ui-state-default ui-corner-all']").sendKeys(Keys.ENTER);
 			Thread.sleep(1000);
 
+			savebtn.click();
+			Thread.sleep(2000);
 			
-	
+			String msg = driver.findElementByClassName("toast-message").getText();
+			System.out.println(msg);
 			
 			
-//			savebtn.click();
-//			Thread.sleep(2000);
+
+			if(msg.equalsIgnoreCase("Successfully saved"))
+			{
+				
+	   	            //  System.out.println("Success msg displayed");
+	   	              Xluitls.setCellData(xlfile, xlsheet, i, 7, msg);
+	   	              Xluitls.setCellData(xlfile, xlsheet, i, 8, "Pass");
+					  Xluitls.fillGreenColor(xlfile, xlsheet, i, 8);
+			
+				
+			}else if(msg.equalsIgnoreCase("Email already exist")) {
+				
+		            System.out.println("Failed due to Email already exist");
+		           Xluitls.setCellData(xlfile, xlsheet, i, 7, msg);
+	   	           Xluitls.setCellData(xlfile, xlsheet, i, 8, "Fail");
+				   Xluitls.fillRedColor(xlfile, xlsheet, i, 8);
+		           
+			}else if(msg.equalsIgnoreCase("Given phone no. already exists")) {				
+		           //System.out.println("Null data");
+		           Xluitls.setCellData(xlfile, xlsheet, i, 7, "Given phone no. already exists");
+	   	           Xluitls.setCellData(xlfile, xlsheet, i, 8, "Fail");
+				   Xluitls.fillRedColor(xlfile, xlsheet, i, 8);
+			}else if(msg.equalsIgnoreCase(" ")) {	
+				
+				 //System.out.println("Null data");
+		           Xluitls.setCellData(xlfile, xlsheet, i, 7, "Mandatory field is missing or Invalid data is given");
+	   	           Xluitls.setCellData(xlfile, xlsheet, i, 8, "Fail");
+				   Xluitls.fillRedColor(xlfile, xlsheet, i, 8);
+					
 
 		}
 		
-	
+		}
 	}
 }
